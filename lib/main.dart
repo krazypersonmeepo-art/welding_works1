@@ -1,19 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:welding_works/app_config.dart';
-import 'package:welding_works/firebase_options.dart';
 import 'package:welding_works/signup_page.dart';
 import 'package:welding_works/trainer_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
   runApp(const WeldingWorksApp());
 }
 
@@ -197,7 +190,6 @@ class _LoginCardState extends State<_LoginCard> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoggingIn = false;
-  bool _isGoogleBusy = false;
 
   void _togglePasswordVisibility() {
     setState(() {
@@ -270,83 +262,6 @@ class _LoginCardState extends State<_LoginCard> {
       if (mounted) {
         setState(() {
           _isLoggingIn = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _loginWithGoogle() async {
-    if (_isGoogleBusy) return;
-    setState(() {
-      _isGoogleBusy = true;
-    });
-
-    try {
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        return;
-      }
-
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final userCred =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-
-      final idToken = await userCred.user?.getIdToken();
-      if (idToken == null) {
-        throw Exception("Missing ID token");
-      }
-
-      final response = await http.post(
-        Uri.parse("${AppConfig.weldingApi}/google_login.php"),
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "User-Agent": "Mozilla/5.0",
-          "X-Requested-With": "XMLHttpRequest",
-        },
-        body: jsonEncode({
-          "id_token": idToken,
-          "first_name": userCred.user?.displayName?.split(' ').first ?? "",
-          "last_name": userCred.user?.displayName?.split(' ').skip(1).join(' ') ??
-              "",
-        }),
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception("Server returned ${response.statusCode}");
-      }
-
-      try {
-        final data = jsonDecode(response.body);
-        if (data is Map && data["status"] == "success") {
-          if (!mounted) return;
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => const TrainerDashboard(),
-            ),
-          );
-        } else {
-          throw Exception(data["message"] ?? "Google login failed");
-        }
-      } catch (_) {
-        final snippet =
-            response.body.length > 200 ? response.body.substring(0, 200) : response.body;
-        throw Exception("Non-JSON response: $snippet");
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Google sign-in failed: $e")),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGoogleBusy = false;
         });
       }
     }
@@ -429,48 +344,7 @@ class _LoginCardState extends State<_LoginCard> {
             ),
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: Divider(color: Colors.grey.shade300, thickness: 1),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  'OR',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                    color: Colors.black54,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Divider(color: Colors.grey.shade300, thickness: 1),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Center(
-            child: OutlinedButton.icon(
-              onPressed: _isGoogleBusy ? null : _loginWithGoogle,
-              icon: const Icon(Icons.g_mobiledata),
-              label: Text(_isGoogleBusy
-                  ? 'Signing in...'
-                  : 'Continue with Google'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 6,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           Center(
             child: Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,
