@@ -1,5 +1,5 @@
 class AppConfig {
   // Hard-coded production host for now.
-  static const String baseHost = "https://weldingworks.page.gd";
-  static String get weldingApi => "$baseHost/welding_api_v2";
+  static const String baseHost = "https://YOUR-RAILWAY-APP.up.railway.app";
+  static String get weldingApi => baseHost;
 }
