@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welding Works Admin</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <div>Welding Works Admin</div>
+      <div class="header-right">
+        <div id="adminWelcome" class="muted hidden"></div>
+        <button id="logoutBtn" class="secondary hidden">Logout</button>
+      </div>
+    </header>
+
+    <div class="container">
+      <div id="loginCard" class="card">
+        <h2>Admin Login</h2>
+        <div class="row">
+          <div class="field">
+            <label>Email</label>
+            <input id="loginEmail" type="email" placeholder="admin@email.com" />
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input id="loginPassword" type="password" placeholder="••••••••" />
+              <button id="togglePassword" class="secondary" type="button">Show</button>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 14px;">
+          <button id="loginBtn">Sign in</button>
+        </div>
+        <div id="loginError" class="muted" style="margin-top: 10px;"></div>
+      </div>
+
+      <div id="adminPanel" class="hidden">
+        <div class="tabs">
+          <div class="tab active" data-tab="users">Users</div>
+          <div class="tab" data-tab="criteria">Criteria</div>
+          <div class="tab" data-tab="audit">Audit Logs</div>
+        </div>
+
+        <div id="tab-users" class="card">
+          <h3>Users</h3>
+          <div class="muted">Manage role, status, and verification.</div>
+          <div style="margin-top: 12px; overflow-x:auto;">
+            <table id="usersTable">
+              <thead>
+                <tr>
+                  <th class="users-col">Name</th>
+                  <th class="email-col">Email</th>
+                  <th class="role-col">Role</th>
+                  <th class="status-col">Status</th>
+                  <th class="verified-col">Verified</th>
+                  <th class="action-col-users">Action</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="tab-criteria" class="card hidden">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <h3>Criteria</h3>
+            <button class="secondary" type="button" title="Criteria Files">📁</button>
+          </div>
+          <div class="tabs" style="margin-top: 12px;">
+            <div class="tab active" data-subtab="competency">Competency Checklist</div>
+            <div class="tab" data-subtab="assessment">Assessment</div>
+            <div class="tab" data-subtab="grading">Grading Sheet</div>
+          </div>
+
+          <div id="criteria-competency">
+            <div style="margin-top: 14px; overflow-x:auto;">
+              <table id="competencyTable">
+                <thead>
+                  <tr>
+                    <th class="cat-col">Category</th>
+                    <th class="title-col">Title</th>
+                    <th class="active-col">Active</th>
+                    <th class="action-col">Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="criteria-assessment" class="hidden">
+            <div style="margin-top: 14px; overflow-x:auto;">
+              <table id="assessmentTable">
+                <thead>
+                  <tr>
+                    <th class="cat-col">Category</th>
+                    <th class="title-col">Title</th>
+                    <th class="active-col">Active</th>
+                    <th class="action-col">Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="criteria-grading" class="hidden">
+            <div style="margin-top: 14px; overflow-x:auto;">
+              <table id="gradingTable">
+                <thead>
+                  <tr>
+                    <th class="title-col">Component</th>
+                    <th class="percent-col">Percent</th>
+                    <th class="range-col">Range</th>
+                    <th class="remark-col">Remark</th>
+                    <th class="active-col">Active</th>
+                    <th class="action-col">Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-audit" class="card hidden">
+          <h3>Audit Logs</h3>
+          <div style="margin-top: 12px; overflow-x:auto;">
+            <table id="auditTable">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Actor</th>
+                  <th>Action</th>
+                  <th>Target</th>
+                  <th>Details</th>
+                  <th>View</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button id="auditPrevBtn" class="secondary" type="button">Previous</button>
+            <span id="auditPageInfo" class="muted">Page 1 of 1</span>
+            <button id="auditNextBtn" class="secondary" type="button">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="compModal" class="modal hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Add Competency</h3>
+          <button id="compModalClose" class="secondary" type="button">✕</button>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Category</label>
+            <select id="modalCompCategory">
+              <option value="Basic">Basic</option>
+              <option value="Common">Common</option>
+              <option value="Core">Core</option>
+              <option value="Perform root pass">Perform root pass</option>
+              <option value="Clean root pass">Clean root pass</option>
+              <option value="Weld subsequent/filling passes">Weld subsequent/filling passes</option>
+              <option value="Perform capping">Perform capping</option>
+              <option value="Defects (Surface Level)">Defects (Surface Level)</option>
+              <option value="Defects (Non-Surface Level)">Defects (Non-Surface Level)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Title</label>
+            <input id="modalCompTitle" placeholder="Competency title" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="compModalSave">Save</button>
+          <button id="compModalCancel" class="secondary" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="gradeModal" class="modal hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Add Grade Row</h3>
+          <button id="gradeModalClose" class="secondary" type="button">✕</button>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Category</label>
+            <select id="modalGradeCategory">
+              <option value="Grading">Grading</option>
+              <option value="Scale">Scale</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Component</label>
+            <input id="modalGradeTitle" placeholder="Lecture Units (Total Grade)" />
+          </div>
+          <div class="field">
+            <label>Percent</label>
+            <input id="modalGradePercent" type="number" step="0.01" placeholder="25" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Range</label>
+            <input id="modalGradeRange" placeholder="90-100" />
+          </div>
+          <div class="field">
+            <label>Remark</label>
+            <input id="modalGradeRemark" placeholder="Competent" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="gradeModalSave">Save</button>
+          <button id="gradeModalCancel" class="secondary" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="auditModal" class="modal hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Audit Log Detail</h3>
+          <button id="auditModalClose" class="secondary" type="button">✕</button>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Time</label>
+            <div id="auditDetailTime" class="muted"></div>
+          </div>
+          <div class="field">
+            <label>Actor</label>
+            <div id="auditDetailActor" class="muted"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Action</label>
+            <div id="auditDetailAction" class="muted"></div>
+          </div>
+          <div class="field">
+            <label>Target</label>
+            <div id="auditDetailTarget" class="muted"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Details</label>
+          <pre id="auditDetailDetails" class="muted" style="white-space: pre-wrap; margin: 0;"></pre>
+        </div>
+        <div class="modal-actions">
+          <button id="auditModalCloseBtn" class="secondary" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
