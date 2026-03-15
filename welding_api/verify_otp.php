@@ -12,7 +12,7 @@ if ($email === "" || $otp === "") {
 try {
   $pdo = db();
   $stmt = $pdo->prepare("
-    SELECT trainers_id, verification_code
+    SELECT id, verification_code
     FROM users
     WHERE email = ?
     LIMIT 1
@@ -31,9 +31,9 @@ try {
   $update = $pdo->prepare("
     UPDATE users
     SET is_verified = 1, verification_code = NULL
-    WHERE trainers_id = ?
+    WHERE id = ?
   ");
-  $update->execute([$row["trainers_id"]]);
+  $update->execute([$row["id"]]);
 
   respond("success", "OTP verified.");
 } catch (Throwable $e) {

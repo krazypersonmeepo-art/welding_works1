@@ -11,7 +11,7 @@ if ($email === "") {
 try {
   $pdo = db();
   $stmt = $pdo->prepare("
-    SELECT trainers_id, is_verified
+    SELECT id, is_verified
     FROM users
     WHERE email = ?
     LIMIT 1
@@ -31,16 +31,19 @@ try {
   $update = $pdo->prepare("
     UPDATE users
     SET verification_code = ?
-    WHERE trainers_id = ?
+    WHERE id = ?
   ");
-  $update->execute([$otp, $row["trainers_id"]]);
+  $update->execute([$otp, $row["id"]]);
 
   $sent = send_otp_email($email, $otp);
   if (!$sent) {
-    respond("error", "Failed to send OTP email.");
+    respond("error", "Failed to send OTP email.", [
+      "otp" => $otp,
+      "debug" => ["mail_error" => mail_last_error()],
+    ]);
   }
 
-  respond("success", "OTP resent.");
+  respond("success", "OTP resent.", ["otp" => $otp]);
 } catch (Throwable $e) {
   respond("error", "Server error: " . $e->getMessage());
 }

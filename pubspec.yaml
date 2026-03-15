@@ -35,10 +35,16 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   http: ^0.13.6
+  image_picker: ^1.1.2
+  shared_preferences: ^2.2.2
+  share_plus: ^10.0.3
+  path_provider: ^2.1.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_native_splash: ^2.4.1
+  flutter_launcher_icons: ^0.13.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -61,6 +67,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/tesda_logo2.png
+    - assets/welding_works_logo_padded.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -87,3 +94,19 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/welding_works_logo_padded.png
+  android: true
+  ios: true
+  android_12:
+    color: "#FFFFFF"
+    image: assets/welding_works_logo_padded.png
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: assets/welding_works_logo_padded.png
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/welding_works_logo_padded.png

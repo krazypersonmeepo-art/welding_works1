@@ -43,3 +43,17 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+# Secrets
+.env
+**/.env
+
+# Large models / datasets / runs
+*.pt
+runs/
+**/runs/
+YOLO DATASET/
+**/YOLO DATASET/
+
+# API uploads/outputs
+welding_api/yolo_outputs/
+welding_api/yolo_uploads/

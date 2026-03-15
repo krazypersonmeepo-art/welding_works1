@@ -89,9 +89,7 @@ class _SignUpPageState extends State<SignUpPage> {
           "email": emailController.text.trim().toLowerCase(),
           "password": passwordController.text,
           "role": "trainer",
-          "qualification": traineeQualification,
           "status": "active",
-          "score": 0,
         }),
       );
 
@@ -102,7 +100,19 @@ class _SignUpPageState extends State<SignUpPage> {
       if (!mounted) return;
       try {
         final data = jsonDecode(response.body);
+        final message = (data is Map ? data["message"] : null)?.toString();
+        final debugOtp = (data is Map
+            ? ((data["debug"] is Map ? data["debug"]["otp"] : null) ??
+                data["otp"])
+            : null)
+            ?.toString();
+        final debugMail = (data is Map
+            ? (data["debug"] is Map ? data["debug"]["mail_error"] : null)
+            : null)
+            ?.toString();
         if (data["status"] == "success") {
+          await _tryResendOtp();
+          if (!mounted) return;
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -111,7 +121,15 @@ class _SignUpPageState extends State<SignUpPage> {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data["message"] ?? "Registration failed")),
+            SnackBar(
+              content: Text(
+                debugOtp != null
+                    ? "${message ?? "Registration failed."} OTP: $debugOtp"
+                        "${debugMail != null ? " | Mail: $debugMail" : ""}"
+                    : (message ??
+                        "Registration failed. Response: ${response.body}"),
+              ),
+            ),
           );
         }
       } catch (_) {
@@ -135,6 +153,69 @@ class _SignUpPageState extends State<SignUpPage> {
           isSubmitting = false;
         });
       }
+    }
+  }
+
+  Future<void> _tryResendOtp() async {
+    try {
+      final url = Uri.parse("${AppConfig.weldingApi}/resend_otp.php");
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"email": emailController.text.trim().toLowerCase()}),
+      );
+
+      if (!mounted) return;
+      if (response.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "OTP resend failed (HTTP ${response.statusCode}). "
+              "Check API host.",
+            ),
+          ),
+        );
+        return;
+      }
+
+      try {
+        final data = jsonDecode(response.body);
+        final message = (data is Map ? data["message"] : null)?.toString();
+        final debugOtp = (data is Map
+            ? ((data["debug"] is Map ? data["debug"]["otp"] : null) ??
+                data["otp"])
+            : null)
+            ?.toString();
+        final debugMail = (data is Map
+            ? (data["debug"] is Map ? data["debug"]["mail_error"] : null)
+            : null)
+            ?.toString();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              debugOtp != null
+                  ? "${message ?? "OTP resend attempted."} OTP: $debugOtp"
+                      "${debugMail != null ? " | Mail: $debugMail" : ""}"
+                  : (message ??
+                      "OTP resend attempted. Response: ${response.body}"),
+            ),
+          ),
+        );
+      } catch (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "OTP resend returned non-JSON. Check API URL. "
+              "Status ${response.statusCode}",
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("OTP resend error: $e")),
+      );
     }
   }
 

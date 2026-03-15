@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:welding_works/app_routes.dart';
+import 'package:welding_works/auth_session.dart';
 import 'package:welding_works/app_config.dart';
+import 'package:welding_works/forgot_password_page.dart';
 import 'package:welding_works/signup_page.dart';
 import 'package:welding_works/trainer_dashboard.dart';
 
@@ -85,7 +88,32 @@ class WeldingWorksApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const LoginScreen(),
+      routes: {
+        AppRoutes.login: (_) => const LoginScreen(),
+        AppRoutes.trainer: (_) => const TrainerDashboard(),
+        AppRoutes.forgotPassword: (_) => const ForgotPasswordPage(),
+      },
+      home: const _AuthGate(),
+    );
+  }
+}
+
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: AuthSession.isLoggedIn(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final loggedIn = snapshot.data ?? false;
+        return loggedIn ? const TrainerDashboard() : const LoginScreen();
+      },
     );
   }
 }
@@ -116,16 +144,31 @@ class LoginScreen extends StatelessWidget {
             ),
           ),
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _BrandHeader(colorScheme: colorScheme),
-                  const SizedBox(height: 36),
-                  _LoginCard(),
-                ],
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            _BrandHeader(colorScheme: colorScheme),
+                            const SizedBox(height: 28),
+                            _LoginCard(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -142,22 +185,8 @@ class _BrandHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          height: 82,
-          width: 82,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-          ),
-          padding: const EdgeInsets.all(10),
-          child: Image.asset(
-            'assets/tesda_logo2.png',
-            fit: BoxFit.contain,
-          ),
-        ),
-        const SizedBox(height: 20),
         const Text(
           'Welding Works',
           style: TextStyle(
@@ -174,6 +203,7 @@ class _BrandHeader extends StatelessWidget {
             color: Colors.white.withOpacity(0.78),
             fontSize: 14,
           ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -203,7 +233,7 @@ class _LoginCardState extends State<_LoginCard> {
 
     if (identifier.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter username/email and password.')),
+        const SnackBar(content: Text('Enter email and password.')),
       );
       return;
     }
@@ -233,11 +263,15 @@ class _LoginCardState extends State<_LoginCard> {
       try {
         final data = jsonDecode(response.body);
         if (data is Map && data["status"] == "success") {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => const TrainerDashboard(),
-            ),
+          final email = (data["email"] ?? identifier).toString();
+          final username = (data["username"] ?? identifier).toString();
+          await AuthSession.setLoggedIn(
+            value: true,
+            email: email,
+            username: username,
           );
+          if (!mounted) return;
+          Navigator.of(context).pushReplacementNamed(AppRoutes.trainer);
           return;
         }
         ScaffoldMessenger.of(context).showSnackBar(
@@ -304,8 +338,8 @@ class _LoginCardState extends State<_LoginCard> {
             keyboardType: TextInputType.emailAddress,
             controller: _identifierController,
             decoration: const InputDecoration(
-              labelText: 'Username or email',
-              hintText: 'username or you@company.com',
+              labelText: 'Email',
+              hintText: 'you@company.com',
               prefixIcon: Icon(Icons.mail_outline),
             ),
           ),
@@ -331,7 +365,9 @@ class _LoginCardState extends State<_LoginCard> {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).pushNamed(AppRoutes.forgotPassword);
+              },
               child: const Text('Forgot password?'),
             ),
           ),

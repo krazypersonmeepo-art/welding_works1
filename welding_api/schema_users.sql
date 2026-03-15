@@ -12,6 +12,7 @@ CREATE TABLE users (
   password_change TINYINT NOT NULL DEFAULT 0,
   verification_code VARCHAR(120) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   last_activity_at TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_username (username),

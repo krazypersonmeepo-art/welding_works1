@@ -16,7 +16,7 @@ if ($loginId === "" || $password === "") {
 try {
   $pdo = db();
   $stmt = $pdo->prepare("
-    SELECT trainers_id, password, is_verified
+    SELECT id, password, is_verified, email, username, role
     FROM users
     WHERE email = ? OR username = ?
     LIMIT 1
@@ -36,7 +36,11 @@ try {
     respond("error", "Account not verified. Please verify OTP.");
   }
 
-  respond("success", "Login successful.");
+  audit_log("login", $row["email"], $row["role"], "user", $row["id"]);
+  respond("success", "Login successful.", [
+    "email" => $row["email"],
+    "username" => $row["username"],
+  ]);
 } catch (Throwable $e) {
   respond("error", "Server error: " . $e->getMessage());
 }
