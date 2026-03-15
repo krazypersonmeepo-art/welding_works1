@@ -53,6 +53,13 @@ function send_mail($toEmail, $subject, $bodyText) {
         return false;
       }
       $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+      $smtpDebug = getenv("SMTP_DEBUG") ?: "";
+      if ($smtpDebug !== "") {
+        $mail->SMTPDebug = intval($smtpDebug);
+        $mail->Debugoutput = function ($str, $level) {
+          error_log("SMTP[$level] " . $str);
+        };
+      }
       $mail->isSMTP();
       $mail->Host = getenv("SMTP_HOST") ?: "smtp.gmail.com";
       $mail->SMTPAuth = true;
@@ -62,6 +69,10 @@ function send_mail($toEmail, $subject, $bodyText) {
       $secure = getenv("SMTP_SECURE") ?: "tls";
       if ($secure !== "") {
         $mail->SMTPSecure = $secure;
+      }
+      // Gmail is strict about sender; default to SMTP user to avoid mismatch.
+      if ($smtpUser !== "" && $from !== $smtpUser) {
+        $from = $smtpUser;
       }
       $mail->setFrom($from, $fromName);
       $mail->addAddress($toEmail);
