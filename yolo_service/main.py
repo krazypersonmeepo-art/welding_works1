@@ -41,8 +41,9 @@ async def infer(image: UploadFile = File(...)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
-    # Save to temp file
-    tmp_path = f"/tmp/{image.filename}"
+    # Save to temp file (ensure no nested paths)
+    safe_name = os.path.basename(image.filename) or "upload.jpg"
+    tmp_path = f"/tmp/{safe_name}"
     with open(tmp_path, "wb") as f:
         f.write(await image.read())
 
