@@ -18,7 +18,8 @@ RUN pip install -r requirements.txt
 
 # Install CPU-only torch + torchvision first, then ultralytics (keeps image smaller)
 RUN pip install --index-url https://download.pytorch.org/whl/cpu torch==2.2.2 torchvision==0.17.2 \
-  && pip install ultralytics==8.2.0
+  && pip install ultralytics==8.2.0 \
+  && pip install --force-reinstall numpy==1.26.4
 
 COPY . /app
 
