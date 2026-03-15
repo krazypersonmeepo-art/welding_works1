@@ -3,6 +3,7 @@ import urllib.request
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from ultralytics import YOLO
+import traceback
 
 app = FastAPI()
 
@@ -39,6 +40,7 @@ async def infer(image: UploadFile = File(...)):
     try:
         model = ensure_model()
     except Exception as e:
+        traceback.print_exc()
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
     # Save to temp file (ensure no nested paths)
@@ -73,6 +75,7 @@ async def infer(image: UploadFile = File(...)):
             "is_good": is_good,
         }
     except Exception as e:
+        traceback.print_exc()
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
     finally:
         try:
