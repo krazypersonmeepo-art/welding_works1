@@ -36,52 +36,42 @@ if (!move_uploaded_file($upload["tmp_name"], $imagePath)) {
   respond("error", "Failed to save image.");
 }
 
-$modelPath = getenv("YOLO_MODEL_PATH") ?: (__DIR__ . "/models/best.pt");
-$modelUrl = getenv("YOLO_MODEL_URL") ?: "";
-if (!file_exists($modelPath)) {
-  if ($modelUrl !== "") {
-    if (!is_dir(dirname($modelPath))) {
-      mkdir(dirname($modelPath), 0777, true);
-    }
-    $downloaded = @file_put_contents($modelPath, @file_get_contents($modelUrl));
-    if (!$downloaded || !file_exists($modelPath)) {
-      respond("error", "Model download failed. Check YOLO_MODEL_URL.");
-    }
-  } else {
-    respond("error", "Model not found. Set YOLO_MODEL_PATH or YOLO_MODEL_URL.");
-  }
+// Call external YOLO service
+$yoloServiceUrl = getenv("YOLO_SERVICE_URL") ?: "";
+if ($yoloServiceUrl === "") {
+  respond("error", "YOLO service not configured. Set YOLO_SERVICE_URL.");
 }
 
-$runId = "run_" . time();
-$cmd = "python " .
-  escapeshellarg(__DIR__ . "/yolo_infer.py") .
-  " --model " . escapeshellarg($modelPath) .
-  " --source " . escapeshellarg($imagePath) .
-  " --project " . escapeshellarg($outputsDir) .
-  " --name " . escapeshellarg($runId);
+$ch = curl_init();
+$postFields = [
+  "image" => new CURLFile($imagePath),
+];
+curl_setopt_array($ch, [
+  CURLOPT_URL => rtrim($yoloServiceUrl, "/") . "/infer",
+  CURLOPT_POST => true,
+  CURLOPT_POSTFIELDS => $postFields,
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_TIMEOUT => 60,
+]);
+$response = curl_exec($ch);
+$curlErr = curl_error($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
 
-$output = shell_exec($cmd);
-if ($output === null) {
-  respond("error", "Inference failed to run.");
+if ($response === false || $httpCode >= 400) {
+  $msg = $curlErr ?: ("YOLO service error (HTTP " . $httpCode . ")");
+  respond("error", $msg);
 }
 
-// Some environments still emit logs; try to extract the last JSON object.
-$trimmed = trim($output);
-$jsonStart = strrpos($trimmed, "{");
-$jsonEnd = strrpos($trimmed, "}");
-$jsonPayload = $trimmed;
-if ($jsonStart !== false && $jsonEnd !== false && $jsonEnd > $jsonStart) {
-  $jsonPayload = substr($trimmed, $jsonStart, $jsonEnd - $jsonStart + 1);
-}
-
-$payload = json_decode($jsonPayload, true);
+$payload = json_decode($response, true);
 if (!is_array($payload)) {
-  respond("error", "Invalid inference output.");
+  respond("error", "Invalid YOLO service response.");
 }
 
 $label = trim($payload["label"] ?? "");
-$confidence = trim($payload["confidence"] ?? "");
+$confidence = trim((string)($payload["confidence"] ?? ""));
 $reason = trim($payload["reason"] ?? "");
+$isGood = (bool)($payload["is_good"] ?? false);
 $outputImage = $payload["output_image"] ?? "";
 
 $annotatedUrl = "";
@@ -100,10 +90,7 @@ if (strpos($originalRelative, "/") !== 0) {
   $originalRelative = "/" . $originalRelative;
 }
 
-$demoStatus = "not_yet_competent";
-if (strtolower($label) === "good welding") {
-  $demoStatus = "competent";
-}
+$demoStatus = $isGood ? "competent" : "not_yet_competent";
 
 try {
   $pdo = db();
