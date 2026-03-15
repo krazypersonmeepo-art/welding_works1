@@ -5,7 +5,13 @@ RUN docker-php-ext-install pdo_mysql
 
 # Install Python + pip for YOLO inference and common deps
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 python3-pip \
+  && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-full \
+    python3-venv \
+    python3-pip \
+    libgl1 \
+    libglib2.0-0 \
   && pip3 install --no-cache-dir ultralytics pillow numpy \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
