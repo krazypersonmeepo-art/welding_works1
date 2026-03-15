@@ -2,6 +2,7 @@ FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
@@ -13,7 +14,11 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
+
+# Install CPU-only torch + torchvision first, then ultralytics (keeps image smaller)
+RUN pip install --index-url https://download.pytorch.org/whl/cpu torch==2.2.2 torchvision==0.17.2 \
+  && pip install ultralytics==8.2.0
 
 COPY . /app
 
