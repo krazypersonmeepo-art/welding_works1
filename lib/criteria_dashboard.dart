@@ -65,6 +65,36 @@ class _CriteriaDashboardState extends State<CriteriaDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final competencyItems =
+        _items.where((i) => i.type == "competency").toList();
+    final assessmentItems =
+        _items.where((i) => i.type == "assessment").toList();
+
+    final competencyCategories = const ["Basic", "Common", "Core"];
+    List<_CriteriaItem> competencyTabItems =
+        competencyItems.where((i) => competencyCategories.contains(i.category)).toList();
+    List<String>? competencyAllowed = competencyCategories;
+    if (competencyTabItems.isEmpty) {
+      // Fallback to any competency data if no Basic/Common/Core categories exist.
+      competencyTabItems = competencyItems;
+      competencyAllowed = null;
+    }
+
+    final assessmentCategories = const [
+      "Perform root pass",
+      "Clean root pass",
+      "Weld subsequent/filling passes",
+      "Perform capping",
+      "Defects (Surface Level)",
+      "Defects (Non-Surface Level)",
+    ];
+    final assessmentSource = assessmentItems.isNotEmpty
+        ? assessmentItems
+        : competencyItems;
+    final assessmentTabItems = assessmentSource
+        .where((i) => assessmentCategories.contains(i.category))
+        .toList();
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -87,12 +117,12 @@ class _CriteriaDashboardState extends State<CriteriaDashboard> {
                 : TabBarView(
                     children: [
                       _CriteriaList(
-                        items: _items.where((i) => i.type == "competency").toList(),
+                        items: competencyTabItems,
                         categoryOrder: const ["Basic", "Common", "Core"],
-                        allowedCategories: const ["Basic", "Common", "Core"],
+                        allowedCategories: competencyAllowed,
                       ),
                       _CriteriaList(
-                        items: _items.where((i) => i.type == "assessment").toList(),
+                        items: assessmentTabItems,
                         categoryOrder: const [
                           "Perform root pass",
                           "Clean root pass",
@@ -101,14 +131,7 @@ class _CriteriaDashboardState extends State<CriteriaDashboard> {
                           "Defects (Surface Level)",
                           "Defects (Non-Surface Level)",
                         ],
-                        allowedCategories: const [
-                          "Perform root pass",
-                          "Clean root pass",
-                          "Weld subsequent/filling passes",
-                          "Perform capping",
-                          "Defects (Surface Level)",
-                          "Defects (Non-Surface Level)",
-                        ],
+                        allowedCategories: assessmentCategories,
                       ),
                       _CriteriaList(
                         items: _items.where((i) => i.type == "grading").toList(),

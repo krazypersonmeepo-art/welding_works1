@@ -102,7 +102,7 @@ class _SettingsTab extends StatelessWidget {
         ),
         ListTile(
           title: const Text('API base URL'),
-          subtitle: const Text('https://weldingworks-production.up.railway.app'),
+          subtitle: const Text('https://weldingworks1-production.up.railway.app'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () {},
         ),
