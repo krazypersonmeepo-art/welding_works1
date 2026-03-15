@@ -12,7 +12,7 @@ RUN apt-get update \
     python3-pip \
     libgl1 \
     libglib2.0-0 \
-  && pip3 install --no-cache-dir ultralytics pillow numpy \
+  && pip3 install --no-cache-dir --break-system-packages ultralytics pillow numpy \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
