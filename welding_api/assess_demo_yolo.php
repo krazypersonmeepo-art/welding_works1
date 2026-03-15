@@ -36,9 +36,20 @@ if (!move_uploaded_file($upload["tmp_name"], $imagePath)) {
   respond("error", "Failed to save image.");
 }
 
-$modelPath = "C:/Users/Kimbap/Desktop/Flutter-Work/Welding Works/runs/segment/train2/weights/best.pt";
+$modelPath = getenv("YOLO_MODEL_PATH") ?: (__DIR__ . "/models/best.pt");
+$modelUrl = getenv("YOLO_MODEL_URL") ?: "";
 if (!file_exists($modelPath)) {
-  respond("error", "Model not found: " . $modelPath);
+  if ($modelUrl !== "") {
+    if (!is_dir(dirname($modelPath))) {
+      mkdir(dirname($modelPath), 0777, true);
+    }
+    $downloaded = @file_put_contents($modelPath, @file_get_contents($modelUrl));
+    if (!$downloaded || !file_exists($modelPath)) {
+      respond("error", "Model download failed. Check YOLO_MODEL_URL.");
+    }
+  } else {
+    respond("error", "Model not found. Set YOLO_MODEL_PATH or YOLO_MODEL_URL.");
+  }
 }
 
 $runId = "run_" . time();
